@@ -1,65 +1,81 @@
-import Image from "next/image";
+import { Suspense } from 'react';
+import { fetchSchedule, parseScheduleToMatches } from '@/lib/api';
+import MatchList from '@/components/MatchList';
 
-export default function Home() {
+// Helper to deduce category from search params
+function getCategoryFromParams(cat?: string | string[]): string {
+  if (Array.isArray(cat)) return cat[0];
+  if (!cat) return 'Soccer'; // Default to Soccer
+  return cat;
+}
+
+export const revalidate = 60; // Revalidate every minute
+
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default async function Home(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const category = getCategoryFromParams(searchParams.cat);
+  const loading = false; // Server component, initial load handled by Suspense/loading.tsx effectively
+
+  // Fetch data on the server
+  const schedule = await fetchSchedule();
+  
+  // Parse matches for the selected category
+  const matches = schedule 
+    ? parseScheduleToMatches(schedule, category) 
+    : [];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen pb-20">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-[#0a0a0f] border-b border-white/5 min-h-[60vh] flex items-center">
+        <div className="absolute inset-0 bg-[url('/hero-pattern.svg')] opacity-20 animate-pulse-slow"></div>
+        {/* Ambient Glows */}
+        <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-l from-[#ff6b35]/20 via-[#ff6b35]/5 to-transparent blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-1/3 h-2/3 bg-gradient-to-t from-[#16161f] to-transparent"></div>
+        
+        <div className="container mx-auto relative z-10 py-20 md:py-32">
+          <div className="max-w-4xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[#ff6b35] font-bold text-xs uppercase tracking-widest mb-6 animate-in slide-in-from-bottom-4 fade-in duration-700">
+               <span className="w-2 h-2 rounded-full bg-[#ff6b35] animate-pulse"></span>
+               Live Sports Streaming
+            </div>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white mb-8 leading-[1.1] animate-in slide-in-from-bottom-6 fade-in duration-700 delay-100">
+              Watch <span className="gradient-text">{category}</span> <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/50">Matches Live</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-[#a1a1aa] mb-12 leading-relaxed max-w-2xl animate-in slide-in-from-bottom-6 fade-in duration-700 delay-200">
+              Experience the thrill of live sports with premium HD streaming. 
+              <br className="hidden md:block"/>No interruptions, just pure action from the world&apos;s best {category.toLowerCase()} leagues.
+            </p>
+            
+            <div className="flex flex-wrap gap-5 animate-in slide-in-from-bottom-6 fade-in duration-700 delay-300">
+              <a href="#matches" className="btn-primary inline-flex items-center gap-3 text-lg px-8 py-4 shadow-[0_0_30px_rgba(255,107,53,0.3)] hover:shadow-[0_0_50px_rgba(255,107,53,0.5)]">
+                Browse Matches
+                <svg className="w-6 h-6 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </a>
+              <div className="px-6 py-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md text-white font-medium flex items-center gap-3">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                API Connected & Stable
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
+
+      {/* Matches Section */}
+      <div id="matches" className="container mx-auto py-12">
+        <Suspense fallback={<div className="text-white">Loading matches...</div>}>
+          <MatchList matches={matches} loading={loading} />
+        </Suspense>
+      </div>
     </div>
   );
 }
