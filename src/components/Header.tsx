@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const NAV_ITEMS = [
@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { name: 'Tennis', href: '/?cat=Tennis', icon: '🎾' },
 ];
 
-export default function Header() {
+function HeaderContent() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchParams = useSearchParams();
@@ -156,5 +156,21 @@ export default function Header() {
         )}
       </div>
     </header>
+  );
+}
+
+export default function Header() {
+  return (
+    <Suspense 
+      fallback={
+        <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0a0a0f]/80 backdrop-blur-xl transition-all duration-300">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="flex items-center justify-between h-20 md:h-28" />
+          </div>
+        </header>
+      }
+    >
+      <HeaderContent />
+    </Suspense>
   );
 }
