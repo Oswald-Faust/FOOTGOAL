@@ -5,7 +5,7 @@ import MatchList from '@/components/MatchList';
 // Helper to deduce category from search params
 function getCategoryFromParams(cat?: string | string[]): string {
   if (Array.isArray(cat)) return cat[0];
-  if (!cat) return 'Soccer'; // Default to Soccer
+  if (!cat) return 'Football 2'; // Default to Football 2
   return cat;
 }
 
