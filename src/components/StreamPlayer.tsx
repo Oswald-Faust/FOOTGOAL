@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Channel } from '@/types';
 import { getStreamUrl } from '@/lib/api';
 
@@ -26,17 +26,10 @@ export default function StreamPlayer({
     channel_id: channelId,
     channel_name: channelName,
   });
+  const [isStreamActive, setIsStreamActive] = useState(true);
 
   // Folders to try in order
   const folders: PlayerFolder[] = ['stream', 'cast', 'watch', 'plus', 'casting', 'player'];
-
-  // Reset state when channel changes
-  useEffect(() => {
-    setCurrentFolder('stream');
-    setIsLoading(true);
-    setHasError(false);
-    setSelectedChannel({ channel_id: channelId, channel_name: channelName });
-  }, [channelId, channelName]);
 
   const tryNextFolder = () => {
     const currentIndex = folders.indexOf(currentFolder);
@@ -82,6 +75,9 @@ export default function StreamPlayer({
           </div>
         )}
 
+        {/* Safety/Start Overlay - REMOVED */}
+        {/* Stream starts automatically now */}
+
         {/* Error State */}
         {error && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#12121a] z-20">
@@ -102,6 +98,7 @@ export default function StreamPlayer({
                   setCurrentFolder('stream');
                   setIsLoading(true);
                   setHasError(false);
+                  setIsStreamActive(true);
                 }}
                 className="px-8 py-3 rounded-xl bg-[#ff6b35] text-white font-bold hover:bg-[#e05a2b] transition-all transform hover:scale-105 shadow-lg shadow-[#ff6b35]/20"
               >
@@ -112,16 +109,18 @@ export default function StreamPlayer({
         )}
 
         {/* Iframe */}
-        <iframe
+        {isStreamActive && (
+          <iframe
           key={`${selectedChannel.channel_id}-${currentFolder}`}
           src={streamUrl}
           className="w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts allow-top-navigation"
+          sandbox="allow-forms allow-pointer-lock allow-same-origin allow-scripts"
           onLoad={handleIframeLoad}
           onError={handleIframeError}
         />
+        )}
       </div>
 
       {/* Control Bar */}

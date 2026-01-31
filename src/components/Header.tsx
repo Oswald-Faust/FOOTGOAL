@@ -5,7 +5,7 @@ import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const NAV_ITEMS = [
-  { name: 'Football', href: '/', icon: '⚽' },
+  { name: 'Football 2', href: '/?cat=Football%202', icon: '⚽' },
   { name: 'NBA', href: '/?cat=NBA', icon: '🏀' },
   { name: 'NFL', href: '/?cat=NFL', icon: '🏈' },
   { name: 'UFC', href: '/?cat=UFC', icon: '🥊' },

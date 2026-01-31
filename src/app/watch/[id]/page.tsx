@@ -87,6 +87,7 @@ export default async function WatchPage(props: PageProps) {
             </div>
 
             <StreamPlayer 
+              key={channelId}
               channelId={channelId} 
               channelName={currentChannel?.channel_name || `Channel ${channelId}`}
               matchTitle={matchTitle || 'Live Stream'}

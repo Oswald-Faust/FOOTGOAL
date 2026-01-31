@@ -9,7 +9,7 @@ function getCategoryFromParams(cat?: string | string[]): string {
   return cat;
 }
 
-export const revalidate = 60; // Revalidate every minute
+export const revalidate = 10; // Revalidate every 10 seconds
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -21,7 +21,7 @@ export default async function Home(props: PageProps) {
   const loading = false; // Server component, initial load handled by Suspense/loading.tsx effectively
 
   // Fetch data on the server
-  const schedule = await fetchSchedule();
+  const schedule = await fetchSchedule(category);
   
   // Parse matches for the selected category
   const matches = schedule 

@@ -99,38 +99,73 @@ export class DaddyLiveScraper {
       
       // If text is too long, it's likely a container, not a match row. Skip.
       // If text is too short, skip.
-      if (text.length > 200 || text.length < 10) return;
+      if (text.length > 300 || text.length < 10) return;
 
       const timeMatch = text.match(timePattern);
       if (timeMatch) {
-         // We found a time! Let's see if there is a link inside or nearby
-         const link = $(el).find('a').first();
-         const href = link.attr('href');
+         // We found a time!
+         const links = $(el).find('a');
+         const collectedChannels: Channel[] = [];
+
+         links.each((_, link) => {
+             const href = $(link).attr('href');
+             const name = $(link).text().trim();
+             
+             if (href) {
+                // Extract ID from link
+                // Patterns: /stream/stream-123.php, /embed/123, index.php?id=123
+                const idMatch = href.match(/stream-(\d+)\.php/i) || href.match(/id=(\d+)/i) || href.match(/\/(\d+)\.php/i);
+                
+                if (idMatch) {
+                    const channelId = idMatch[1];
+                    // Clean name (remove common suffixes/prefixes if needed)
+                    let cleanName = name || `Channel ${channelId}`;
+                    // Shorten very long names
+                    if (cleanName.length > 20) cleanName = cleanName.substring(0, 20) + '...';
+
+                    collectedChannels.push({
+                        channel_name: cleanName,
+                        channel_id: channelId,
+                        logo_url: '/placeholder-logo.png'
+                    });
+                }
+             }
+         });
+
+         // Logic to determine the title
+         // We take the full text, and remove the time. 
+         // Crucial: We must also remove the text of the channels we found to avoid "Real vs Barca DAZN 1"
+         let title = text.replace(timeMatch[0], '').replace(/Live/i, '').replace(/Stream/i, '').trim();
          
-         // Extract ID from link
-         // Patterns: /stream/stream-123.php, /embed/123, index.php?id=123
-         let streamId = null;
-         if (href) {
-            const idMatch = href.match(/stream-(\d+)\.php/i) || href.match(/id=(\d+)/i) || href.match(/\/(\d+)\.php/i);
-            if (idMatch) streamId = idMatch[1];
-         }
+         // Remove channel names from title
+         collectedChannels.forEach(ch => {
+             // Escape special regex chars in channel name
+             const escapedName = ch.channel_name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+             const chPattern = new RegExp(escapedName, 'gi');
+             title = title.replace(chPattern, '');
+         });
 
-         // If we found a time and a potential match title (text without time)
-         if (streamId || ($(el).find('a').length > 0)) {
-            // Clean title: remove time and "Live" keywords
-            let title = text.replace(timeMatch[0], '').replace(/Live/i, '').replace(/Stream/i, '').trim();
-            // Remove typical separators
-            title = title.replace(/^[-–: ]+/, '').replace(/[-–: ]+$/, '');
+         // Remove typical separators and cleanup
+         title = title.replace(/^[-–: ]+/, '').replace(/[-–: ]+$/, '').replace(/\s+/g, ' ').trim();
 
-            if (title.length > 3 && !title.includes('24/7') && !title.includes('Channels')) {
+         // Final validity check
+         if (title.length > 3 && !title.includes('24/7') && !title.includes('Channels')) {
+            // Unify channels if duplicates found (same ID)
+            const uniqueChannels = new Map();
+            collectedChannels.forEach(c => {
+                if (!uniqueChannels.has(c.channel_id)) {
+                    uniqueChannels.set(c.channel_id, c);
+                }
+            });
+
+            // If no channels found but we have a title, we might still listing it? 
+            // Better to only list matches where we found at least one stream, 
+            // unless we want to show "No stream available"
+            if (uniqueChannels.size > 0) {
                schedule[today]['Soccer'].push({
                  time: timeMatch[0],
                  event: title,
-                 channels: streamId ? [{
-                   channel_name: 'Main Stream',
-                   channel_id: streamId,
-                   logo_url: '/placeholder-logo.png'
-                 }] : [], // We found a match but maybe no ID yet, keep it listed
+                 channels: Array.from(uniqueChannels.values()),
                  channels2: []
                });
             }
